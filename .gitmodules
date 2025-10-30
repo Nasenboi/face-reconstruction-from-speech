@@ -8,3 +8,6 @@
 	path = nvdiffrast
 	url = https://github.com/NVlabs/nvdiffrast.git
 	
+[submodule "insightface"]
+	path = insightface
+	url = https://github.com/deepinsight/insightface.git
