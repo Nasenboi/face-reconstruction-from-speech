@@ -1,0 +1,10 @@
+[submodule "VAF"]
+	path = VAF
+	url = https://github.com/lxa9867/VAF.git
+[submodule "Deep3DFaceRecon_pytorch"]
+	path = Deep3DFaceRecon_pytorch
+	url = https://github.com/sicxu/Deep3DFaceRecon_pytorch.git
+[submodule "nvdiffrast"]
+	path = nvdiffrast
+	url = https://github.com/NVlabs/nvdiffrast.git
+	
