@@ -161,3 +161,6 @@ cython_debug/
 
 
 */voxceleb/
+*/data/
+docker-compose.yml
+config.json
