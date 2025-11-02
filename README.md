@@ -24,6 +24,7 @@ The wiki contains relevant infromations to understand the architecture of the co
 - [ffmpeg](https://www.ffmpeg.org/)
 - [anaconda or miniconda](https://anaconda.org/)
 - [docker](https://www.docker.com/)
+- [jq](https://jqlang.org/download/)
 
 # Credits
 

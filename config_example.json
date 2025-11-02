@@ -1,0 +1,15 @@
+{
+    "paths": {
+        "datasets": "datasets",
+        "video": "video",
+        "audio": "audio",
+        "image": "image",
+        "landmarks": "landmarks",
+        "bfm": "face_geometry/BFM",
+        "checkpoints": "face_geometry/checkpoints"
+    },
+    "face_geometry": {
+        "model": "Deep3DFace_PyTorch_20230425",
+        "epoch": 20 
+    }
+}

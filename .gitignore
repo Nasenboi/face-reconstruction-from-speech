@@ -164,3 +164,4 @@ cython_debug/
 */data/
 docker-compose.yml
 config.json
+03_face_geometry_estimation/10_nvidia.json
