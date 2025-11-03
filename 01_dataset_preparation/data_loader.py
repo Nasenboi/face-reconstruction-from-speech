@@ -1,4 +1,8 @@
+import sys
 from typing import Optional
+
+sys.path.append("..")
+from src.paths import *
 
 
 class DataLoader:
@@ -11,16 +15,8 @@ class DataLoader:
 
     def __init__(
         self,
-        video_path: str,
-        audio_path: str,
-        image_path: str,
-        datasets_path: str,
         max_records: Optional[int] = None,
     ):
-        self.video_path = video_path
-        self.audio_path = audio_path
-        self.image_path = image_path
-        self.datasets_path = datasets_path
         self.max_records = max_records
 
         self.read_data()
