@@ -18,10 +18,13 @@ if [ ! -f "$config" ]; then
 fi
 
 image_folder=$(jq -r '.paths.image' "$config")
+frames_folder=$(jq -r '.paths.frames' "$config")
 
 docker build -t landmark_detector:latest $script_dir && \
 docker run --rm -it \
--v "$image_folder":/app/input \
+-v "$frames_folder":/app/frames \
+-v "$image_folder":/app/image \
 --gpus all \
 landmark_detector:latest \
--i /app/input 
+-i /app/image \
+-f /app/frames 

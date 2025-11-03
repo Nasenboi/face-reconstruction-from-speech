@@ -41,6 +41,10 @@ This project would not be possible without the code and models developed by othe
 ## Face Alignment
 [GitHub](https://github.com/1adrianb/face-alignment)
 
+## MTCNN - Multitask Cascaded Convolutional Networks for Face Detection and Alignment
+
+[GitHub](https://github.com/ipazc/mtcnn)
+
 ## NVDIFFRAST
 
 [GitHub](https://github.com/NVlabs/nvdiffrast)
