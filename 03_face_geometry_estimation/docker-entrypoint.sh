@@ -24,7 +24,6 @@ export PATH="/root/miniconda3/envs/deep3d_pytorch/bin:$PATH"
 
 cd /app/Deep3DFaceRecon_pytorch
 
-
-/root/miniconda3/envs/deep3d_pytorch/bin/python /app/Deep3DFaceRecon_pytorch/test.py --name="$MODEL_NAME" --epoch="$EPOCH" --img_folder="$IMAGE_FOLDER"
+/root/miniconda3/envs/deep3d_pytorch/bin/python /app/Deep3DFaceRecon_pytorch/test.py --name="$MODEL_NAME" --epoch="$EPOCH" --img_folder="$IMAGE_FOLDER" > /dev/null 2>&1
 
 # python /app/Deep3DFaceRecon_pytorch/data_preparation.py --img_folder="$IMAGE_FOLDER"
