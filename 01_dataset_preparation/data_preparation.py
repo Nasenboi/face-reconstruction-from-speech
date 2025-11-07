@@ -80,6 +80,9 @@ class DataPreparation:
         return df
 
     def _extract_audio_from_video(self, video_file_path: str):
+        if os.path.exists(TMP_AUDIO_PATH):
+            os.remove(TMP_AUDIO_PATH)
+
         subprocess.run(
             [
                 "ffmpeg",
