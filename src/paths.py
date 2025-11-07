@@ -1,6 +1,8 @@
 import json
 import os
 
+from .models import DataSetRecord
+
 # Load Config
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 config_path = os.path.join(parent_dir, "config.json")
@@ -10,7 +12,7 @@ config = json.load(open(config_path))
 TEST_DATASET_PATH = os.path.join(config["paths"]["datasets"], "test.csv")
 TRAIN_DATASET_PATH = os.path.join(config["paths"]["datasets"], "train.csv")
 VIDEO_PATH = config["paths"]["video"]
-AUDIO_PATH = config["paths"]["audio"]
+TMP_AUDIO_PATH = config["paths"]["tmp_audio"]
 IMAGE_PATH = config["paths"]["image"]
 DATASET_PATH = config["paths"]["datasets"]
 BFM_PATH = os.path.join(config["paths"]["bfm"])
@@ -22,7 +24,7 @@ class PathBuilder:
     This class generates the paths to files based on the dataset ID.
     """
 
-    def __init__(self, dataset_id: str):
+    def __init__(self, record: DataSetRecord):
         """
         Initializes the path builder with the given dataset ID.
         :param dataset_id: The dataset ID.
@@ -34,10 +36,13 @@ class PathBuilder:
             f"epoch_{config['face_geometry']['epoch']}_000000",
         )
 
+        dataset_id = f"{record.speaker_id}_{record.video_id}_{record.clip_id}"
         self.dataset_id = dataset_id
-        self.video_path = os.path.join(config["paths"]["video"], f"{dataset_id}.mp4")
-        self.audio_path = os.path.join(config["paths"]["audio"], f"{dataset_id}.wav")
-        self.frame_image_path = os.path.join(config["paths"]["frames"], f"{dataset_id}")
+
+        self.video_path = os.path.join(
+            config["paths"]["video"], record.speaker_id, record.video_id, f"{record.clip_id}.mp4"
+        )
+        self.frame_images_path = os.path.join(config["paths"]["frames"], dataset_id)
         self.image_0_path = os.path.join(config["paths"]["image"], f"{dataset_id}_0.jpg")
         self.image_1_path = os.path.join(config["paths"]["image"], f"{dataset_id}_1.jpg")
         self.image_2_path = os.path.join(config["paths"]["image"], f"{dataset_id}_2.jpg")
