@@ -9,8 +9,9 @@ import pandas as pd
 from tqdm import tqdm
 
 sys.path.append("..")
+from src.config import *
 from src.models import DataSetRecord
-from src.paths import *
+from src.paths import PathBuilder
 
 
 class DataPreparation:
