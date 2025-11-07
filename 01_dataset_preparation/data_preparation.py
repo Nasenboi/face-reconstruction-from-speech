@@ -19,9 +19,11 @@ class DataPreparation:
         self.dataset_path = dataset_path
         self.df = pd.read_csv(dataset_path, dtype={"clip_id": str})
 
-    def extract_frames(self, frame_step_size: int = 10, max_num_frames: int = 10):
+    def extract_frames(self, frame_step_size: int = 10, max_num_frames: int = 10, frame_start_buffer: int = 5):
         for _, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Extracting frames"):
-            self._extract_frames_for_record(DataSetRecord(**record.to_dict()), frame_step_size, max_num_frames)
+            self._extract_frames_for_record(
+                DataSetRecord(**record.to_dict()), frame_step_size, max_num_frames, frame_start_buffer
+            )
 
     def calculate_audio_features(
         self,
@@ -43,20 +45,22 @@ class DataPreparation:
         output_path = new_path if new_path is not None else self.dataset_path
         self.df.to_csv(output_path, index=False)
 
-    def _extract_frames_for_record(self, record: DataSetRecord, frame_step_size: int, max_num_frames: int):
+    def _extract_frames_for_record(
+        self, record: DataSetRecord, frame_step_size: int, max_num_frames: int, frame_start_buffer: int
+    ):
         paths = PathBuilder(record)
         cap = cv2.VideoCapture(paths.video_path)
 
         if not cap.isOpened():
             raise ValueError(f"Could not open video file: {paths.video_path}")
 
-        num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - frame_start_buffer
 
         stop = min(frame_step_size * max_num_frames, num_frames)
 
         os.makedirs(paths.frame_images_path, exist_ok=True)
 
-        for i in range(0, stop, frame_step_size):
+        for i in range(frame_start_buffer, stop, frame_step_size):
             cap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret, frame = cap.read()
 
