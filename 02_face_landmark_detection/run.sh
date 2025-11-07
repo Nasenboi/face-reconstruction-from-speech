@@ -27,4 +27,5 @@ docker run --rm -it \
 --gpus all \
 landmark_detector:latest \
 -i /app/image \
--f /app/frames 
+-f /app/frames \
+"$@"
