@@ -1,7 +1,12 @@
-from typing import Literal
+from typing import List, Literal
 
 from opensmile import FeatureSet
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+class AM(BaseModel):
+    lm_indicies: List[int]
+    type: Literal["distance", "angle", "proportion"]
 
 
 class DataSetRecord(BaseModel):
