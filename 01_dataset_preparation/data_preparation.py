@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-from typing import Union
+from typing import Optional, Union
 
 import cv2
 import opensmile
@@ -27,15 +27,21 @@ class DataPreparation:
         self,
         feature_set: opensmile.FeatureSet = opensmile.FeatureSet.eGeMAPSv02,
         feature_level: opensmile.FeatureLevel = opensmile.FeatureLevel.Functionals,
+        new_path: Optional[str] = None,
     ):
         smile = opensmile.Smile(feature_set=feature_set, feature_level=feature_level)
         all_audio_features = []
         for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Extracting frames"):
-            all_audio_features.append(self._get_audio_features(DataSetRecord(**record.to_dict()), smile, index))
+            try:
+                all_audio_features.append(self._get_audio_features(DataSetRecord(**record.to_dict()), smile, index))
+            except Exception as e:
+                print(f"Error calculating audio features for {index}:\n{e}")
+                continue
         audio_feature_df = pd.concat(all_audio_features, axis=0)
         self.df = self.df.merge(audio_feature_df, left_index=True, right_index=True, how="left")
 
-        self.df.to_csv(self.dataset_path, index=False)
+        output_path = new_path if new_path is not None else self.dataset_path
+        self.df.to_csv(output_path, index=False)
 
     def _extract_frames_for_record(self, record: DataSetRecord, frame_step_size: int, max_num_frames: int):
         paths = PathBuilder(record)
