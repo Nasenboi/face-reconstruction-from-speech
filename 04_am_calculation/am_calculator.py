@@ -32,7 +32,7 @@ class AMCalculator:
 
     def calculate_ams(self, delete_interm_files: bool = False, new_path: Optional[str] = None):
         all_ams = []
-        for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Extracting frames"):
+        for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Caluclating AMs"):
             try:
                 all_ams.append(
                     self._calculate_record_ams(DataSetRecord(**record.to_dict()), index, delete_interm_files)

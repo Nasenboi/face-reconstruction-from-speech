@@ -9,7 +9,6 @@ fi
 
 root=$(pwd)
 
-# Use $root instead of $(root) and add error handling
 cd "$root/01_dataset_preparation" && python main.py || exit 1
 
 cd "$root"
