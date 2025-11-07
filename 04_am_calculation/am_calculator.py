@@ -65,7 +65,7 @@ class AMCalculator:
             ]
         for prop_am in AM_MAP["proportion"]:
             am = AM(type="proportion", lm_indicies=prop_am)
-            ams[f"proportion_{prop_am[0]:02d}_{prop_am[1]:02d}_{prop_am[2]:02d}_{prop_am[1]:02d}"] = [
+            ams[f"proportion_{prop_am[0]:02d}_{prop_am[1]:02d}_{prop_am[2]:02d}_{prop_am[3]:02d}"] = [
                 self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)
             ]
 
@@ -118,7 +118,7 @@ class AMCalculator:
     def _calc_am(self, landmarks: np.array, am: AM) -> float:
         if am.type == "distance":
             return self._get_distance(landmarks[am.lm_indicies])
-        elif am.type == "distance":
+        elif am.type == "angle":
             return self._get_angle(landmarks[am.lm_indicies])
         else:
             return self._get_proportion(landmarks[am.lm_indicies])
