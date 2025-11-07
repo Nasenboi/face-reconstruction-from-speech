@@ -33,7 +33,7 @@ class DataPreparation:
     ):
         smile = opensmile.Smile(feature_set=feature_set, feature_level=feature_level)
         all_audio_features = []
-        for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Extracting frames"):
+        for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Calculating audio features"):
             try:
                 all_audio_features.append(self._get_audio_features(DataSetRecord(**record.to_dict()), smile, index))
             except Exception as e:
