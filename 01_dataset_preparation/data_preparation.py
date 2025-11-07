@@ -87,7 +87,7 @@ class DataPreparation:
         if os.path.exists(TMP_AUDIO_PATH):
             os.remove(TMP_AUDIO_PATH)
 
-        subprocess.run(
+        result = subprocess.run(
             [
                 "ffmpeg",
                 "-i",
@@ -99,4 +99,6 @@ class DataPreparation:
                 TMP_AUDIO_PATH,
             ],
             check=True,
+            capture_output=True,
+            text=True,
         )
