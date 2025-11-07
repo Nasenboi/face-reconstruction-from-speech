@@ -12,5 +12,9 @@
     "face_geometry": {
         "model": "Deep3DFace_PyTorch_20230425",
         "epoch": 20 
+    },
+    "dataset": {
+        "name": "train_001_250037.csv",
+        "feature_set": "eGeMAPSv02"
     }
 }
