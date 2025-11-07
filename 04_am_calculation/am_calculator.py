@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import sys
 from typing import Optional, Union
 
@@ -29,12 +30,12 @@ class AMCalculator:
         bfm_model_front = scipy.io.loadmat(os.path.join(BFM_PATH, "BFM_model_front.mat"))
         self.landmark_indicies: list = bfm_model_front["keypoints"].flatten() - 1
 
-    def calculate_ams(self, delete_model_output: bool = False, new_path: Optional[str] = None):
+    def calculate_ams(self, delete_interm_files: bool = False, new_path: Optional[str] = None):
         all_ams = []
         for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Extracting frames"):
             try:
                 all_ams.append(
-                    self._calculate_record_ams(DataSetRecord(**record.to_dict()), index, delete_model_output)
+                    self._calculate_record_ams(DataSetRecord(**record.to_dict()), index, delete_interm_files)
                 )
             except Exception as e:
                 print(f"Error calculating ams for {index}:\n{e}")
@@ -73,12 +74,37 @@ class AMCalculator:
         df.index = [index]
 
         if delete:
-            self._delete_model_output(paths)
+            self._delete_interm_files(paths)
 
         return df
 
-    def _delete_model_output(self, paths: PathBuilder):
-        pass
+    def _delete_interm_files(self, paths: PathBuilder):
+        folders_to_delete = [paths.frame_images_path]
+        files_to_delete = [
+            paths.image_0_path,
+            paths.image_1_path,
+            paths.image_2_path,
+            paths.image_detection_0_path,
+            paths.image_detection_1_path,
+            paths.image_detection_2_path,
+            paths.result_0_coefficients,
+            paths.result_0_image,
+            paths.result_0_mesh,
+            paths.result_1_coefficients,
+            paths.result_1_image,
+            paths.result_1_mesh,
+            paths.result_2_coefficients,
+            paths.result_2_image,
+            paths.result_2_mesh,
+        ]
+
+        for folder in folders_to_delete:
+            if os.path.exists(folder):
+                shutil.rmtree(folder)
+
+        for file in files_to_delete:
+            if os.path.exists(file):
+                os.remove(file)
 
     def _get_landmarks(self, mesh_path: str) -> np.array:
         mesh: trimesh.Geometry = trimesh.load(mesh_path)
