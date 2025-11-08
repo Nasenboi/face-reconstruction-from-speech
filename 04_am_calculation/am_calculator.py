@@ -17,10 +17,6 @@ from src.config import *
 from src.models import AM, DataSetRecord
 from src.paths import PathBuilder
 
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-lm_map_path = os.path.join(parent_dir, "am_map.json")
-AM_MAP: dict = json.load(open(lm_map_path))
-
 
 class AMCalculator:
     def __init__(self, dataset_path: str):
@@ -55,19 +51,13 @@ class AMCalculator:
 
         for dist_am in AM_MAP["distance"]:
             am = AM(type="distance", lm_indicies=dist_am)
-            ams[f"distance_{dist_am[0]:02d}_{dist_am[1]:02d}"] = [
-                self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)
-            ]
+            ams[am.get_column_name()] = [self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)]
         for angle_am in AM_MAP["angle"]:
             am = AM(type="angle", lm_indicies=angle_am)
-            ams[f"angle_{angle_am[0]:02d}_{angle_am[1]:02d}_{angle_am[2]:02d}"] = [
-                self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)
-            ]
+            ams[am.get_column_name()] = [self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)]
         for prop_am in AM_MAP["proportion"]:
             am = AM(type="proportion", lm_indicies=prop_am)
-            ams[f"proportion_{prop_am[0]:02d}_{prop_am[1]:02d}_{prop_am[2]:02d}_{prop_am[3]:02d}"] = [
-                self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)
-            ]
+            ams[am.get_column_name()] = [self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)]
 
         df = pd.DataFrame(ams)
         df = df.reset_index(drop=True)

@@ -8,6 +8,9 @@ class AM(BaseModel):
     lm_indicies: List[int]
     type: Literal["distance", "angle", "proportion"]
 
+    def get_column_name(self):
+        return f"{self.type}_" + "_".join([f"{i:02d}" for i in self.lm_indicies])
+
 
 class DataSetRecord(BaseModel):
     speaker_id: str
