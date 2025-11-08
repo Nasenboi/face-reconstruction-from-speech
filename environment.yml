@@ -92,4 +92,5 @@ dependencies:
       - pyarrow==22.0.0
       - pycparser==2.23
       - pydantic==2.12.3
+      - seaborn==0.13.2
       - zipp==3.23.0
