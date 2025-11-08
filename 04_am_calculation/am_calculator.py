@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import trimesh
+from joblib import Parallel, delayed
 from scipy.spatial.distance import euclidean
 from tqdm import tqdm
 
@@ -23,69 +24,83 @@ class AMCalculator:
         self.dataset_path = dataset_path
         self.df = pd.read_csv(dataset_path, dtype={"clip_id": str})
 
-        bfm_model_front = scipy.io.loadmat(os.path.join(BFM_PATH, "BFM_model_front.mat"))
-        self.landmark_indicies: list = bfm_model_front["keypoints"].flatten() - 1
-
-    def calculate_ams(self, delete_interm_files: bool = False, new_path: Optional[str] = None):
-        all_ams = []
-        for index, record in tqdm(self.df.iterrows(), total=len(self.df), desc="Caluclating AMs"):
+    def calculate_ams(
+        self, delete_interm_files: bool = False, new_path: Optional[str] = None, n_jobs: int = 5, drop_na: bool = False
+    ):
+        def process_single_record(record_tuple):
+            index, record_dict, delete = record_tuple
             try:
-                all_ams.append(
-                    self._calculate_record_ams(DataSetRecord(**record.to_dict()), index, delete_interm_files)
-                )
+                record_obj = DataSetRecord(**record_dict)
+                return RecordAMCalculator(record=record_obj, index=index, delete=delete).calculate_ams()
             except Exception as e:
-                print(f"Error calculating ams for {index}:\n{e}")
-                continue
+                print(f"Error calculating AMs for {index}:\n{e}")
+                return None
+
+        records_to_process = [(index, record.to_dict(), delete_interm_files) for index, record in self.df.iterrows()]
+
+        all_ams = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_record)(record_data)
+            for record_data in tqdm(records_to_process, desc="Calculating AMs")
+        )
+        if drop_na:
+            all_ams = [calculator for calculator in all_ams if calculator is not None]
+
         audio_feature_df = pd.concat(all_ams, axis=0)
         self.df = self.df.merge(audio_feature_df, left_index=True, right_index=True, how="left")
 
         output_path = new_path if new_path is not None else self.dataset_path
         self.df.to_csv(output_path, index=False)
 
-    def _calculate_record_ams(self, record: DataSetRecord, index: Union[str, int], delete: bool) -> pd.DataFrame:
-        paths = PathBuilder(record)
-        landmarks_0 = self._get_landmarks(paths.result_0_mesh)
-        landmarks_1 = self._get_landmarks(paths.result_1_mesh)
-        landmarks_2 = self._get_landmarks(paths.result_2_mesh)
+
+class RecordAMCalculator:
+    def __init__(self, record: DataSetRecord, index: Union[str, int], delete: bool = True):
+        self.record = record
+        self.index = index
+        self.delete = delete
+
+        bfm_model_front = scipy.io.loadmat(os.path.join(BFM_PATH, "BFM_model_front.mat"))
+        self.landmark_indicies: list = bfm_model_front["keypoints"].flatten() - 1
+
+        self.paths = PathBuilder(self.record)
+        self.landmarks = [
+            self._get_landmarks(self.paths.result_0_mesh),
+            self._get_landmarks(self.paths.result_1_mesh),
+            self._get_landmarks(self.paths.result_2_mesh),
+        ]
+
+    def calculate_ams(self) -> pd.DataFrame:
         ams = {}
 
-        for dist_am in AM_MAP["distance"]:
-            am = AM(type="distance", lm_indicies=dist_am)
-            ams[am.get_column_name()] = [self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)]
-        for angle_am in AM_MAP["angle"]:
-            am = AM(type="angle", lm_indicies=angle_am)
-            ams[am.get_column_name()] = [self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)]
-        for prop_am in AM_MAP["proportion"]:
-            am = AM(type="proportion", lm_indicies=prop_am)
-            ams[am.get_column_name()] = [self._calc_avg_am(landmarks_0, landmarks_1, landmarks_2, am)]
+        for am in AMS:
+            ams[am.get_column_name()] = [self._calc_avg_am(am)]
 
         df = pd.DataFrame(ams)
         df = df.reset_index(drop=True)
-        df.index = [index]
+        df.index = [self.index]
 
-        if delete:
-            self._delete_interm_files(paths)
+        if self.delete:
+            self._delete_interm_files()
 
         return df
 
-    def _delete_interm_files(self, paths: PathBuilder):
-        folders_to_delete = [paths.frame_images_path]
+    def _delete_interm_files(self):
+        folders_to_delete = [self.paths.frame_images_path]
         files_to_delete = [
-            paths.image_0_path,
-            paths.image_1_path,
-            paths.image_2_path,
-            paths.image_detection_0_path,
-            paths.image_detection_1_path,
-            paths.image_detection_2_path,
-            paths.result_0_coefficients,
-            paths.result_0_image,
-            paths.result_0_mesh,
-            paths.result_1_coefficients,
-            paths.result_1_image,
-            paths.result_1_mesh,
-            paths.result_2_coefficients,
-            paths.result_2_image,
-            paths.result_2_mesh,
+            self.paths.image_0_path,
+            self.paths.image_1_path,
+            self.paths.image_2_path,
+            self.paths.image_detection_0_path,
+            self.paths.image_detection_1_path,
+            self.paths.image_detection_2_path,
+            self.paths.result_0_coefficients,
+            self.paths.result_0_image,
+            self.paths.result_0_mesh,
+            self.paths.result_1_coefficients,
+            self.paths.result_1_image,
+            self.paths.result_1_mesh,
+            self.paths.result_2_coefficients,
+            self.paths.result_2_image,
+            self.paths.result_2_mesh,
         ]
 
         for folder in folders_to_delete:
@@ -102,8 +117,8 @@ class AMCalculator:
 
         return np.array([np.array(v) for v in vertices_3d[self.landmark_indicies.astype(int)]])
 
-    def _calc_avg_am(self, landmarks_0: np.array, landmarks_1: np.array, landmarks_2: np.array, am: AM):
-        return (self._calc_am(landmarks_0, am) + self._calc_am(landmarks_1, am) + self._calc_am(landmarks_2, am)) / 3
+    def _calc_avg_am(self, am: AM):
+        return np.average([self._calc_am(lm, am) for lm in self.landmarks])
 
     def _calc_am(self, landmarks: np.array, am: AM) -> float:
         if am.type == "distance":
