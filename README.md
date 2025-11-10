@@ -1,6 +1,6 @@
 # Acoustic-to-Anthropometric Feature Mapping
 
-This code is the practical implementation of my master thesis "The Acoustic-to-Anthropometric Feature Mapping: Correlating Speech Parameters with Facial Geometry". The goal of the thesis is to find out which features of a persons voice correlate in what way with the appearance of a persons face.
+This code is the practical implementation of my master thesis "The Acoustic-to-Anthropometric Feature Mapping: Correlating High- and Low-Level Vocal Features with Facial Morphology". The goal of the thesis is to find out which features of a persons voice correlate in what way with the appearance of a persons face.
 To find such features, first of all a list is congreated, which contains auditory features which may correlate to anthropometric measurements (AMs) of a persons face. Thereafter, a machine learning algorithm is implemented to predict the AMs using the vector of gathered audio features. 
 Lastly, explainablitly algorithms will uncover the algorithmic process of the models prediction, revealing features, that were relevant for local decisions. By gathering and plotting multiple local feature imporances global patterns shall be discovered.
 
