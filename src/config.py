@@ -2,9 +2,9 @@ import json
 import os
 from typing import List
 
-from opensmile import FeatureSet
+from opensmile import FeatureLevel, FeatureSet
 
-from .models import AM, feature_set_map
+from .models import AM, feature_level_map, feature_set_map
 
 # Load Config
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,6 +19,7 @@ IMAGE_PATH: str = CONFIG["paths"]["image"]
 BFM_PATH: str = os.path.join(CONFIG["paths"]["bfm"])
 
 FEATURE_SET: FeatureSet = feature_set_map[CONFIG["dataset"]["feature_set"]]
+FEATURE_LEVEL: FeatureLevel = feature_level_map[CONFIG["dataset"]["feature_level"]]
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 lm_map_path = os.path.join(parent_dir, "am_map.json")

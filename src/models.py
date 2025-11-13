@@ -1,7 +1,7 @@
 from typing import List, Literal
 
-from opensmile import FeatureSet
-from pydantic import BaseModel, field_validator
+from opensmile import FeatureLevel, FeatureSet
+from pydantic import BaseModel
 
 
 class AM(BaseModel):
@@ -23,3 +23,8 @@ class DataSetRecord(BaseModel):
 
 
 feature_set_map = {"ComParE_2016": FeatureSet.ComParE_2016, "eGeMAPSv02": FeatureSet.eGeMAPSv02}
+feature_level_map = {
+    "Functionals": FeatureLevel.Functionals,
+    "LowLevelDescriptors": FeatureLevel.LowLevelDescriptors,
+    "LowLevelDescriptors_Deltas": FeatureLevel.LowLevelDescriptors_Deltas,
+}

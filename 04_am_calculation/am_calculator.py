@@ -45,8 +45,8 @@ class AMCalculator:
         if drop_na:
             all_ams = [calculator for calculator in all_ams if calculator is not None]
 
-        audio_feature_df = pd.concat(all_ams, axis=0)
-        self.df = self.df.merge(audio_feature_df, left_index=True, right_index=True, how="left")
+        am_df = pd.concat(all_ams, axis=0)
+        self.df = self.df.merge(am_df, left_index=True, right_index=True, how="left")
 
         output_path = new_path if new_path is not None else self.dataset_path
         self.df.to_csv(output_path, index=False)
