@@ -4,7 +4,7 @@
         "video": "video",
         "tmp_audio": "tmp/audio",
         "image": "image",
-        "tmp_frames": "tmp/frames",
+        "tmp_frame": "tmp/frame",
         "landmarks": "landmarks",
         "bfm": "face_geometry/BFM",
         "checkpoints": "face_geometry/checkpoints"

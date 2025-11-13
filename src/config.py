@@ -15,6 +15,7 @@ CONFIG: dict = json.load(open(config_path))
 DATASET_PATH: str = os.path.join(CONFIG["paths"]["datasets"], CONFIG["dataset"]["name"])
 VIDEO_PATH: str = CONFIG["paths"]["video"]
 TMP_AUDIO_PATH: str = CONFIG["paths"]["tmp_audio"]
+TMP_FRAME_PATH: str = CONFIG["paths"]["tmp_frame"]
 IMAGE_PATH: str = CONFIG["paths"]["image"]
 BFM_PATH: str = os.path.join(CONFIG["paths"]["bfm"])
 
