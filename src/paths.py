@@ -29,7 +29,7 @@ class PathBuilder:
         self.video_path = os.path.join(
             CONFIG["paths"]["video"], record.speaker_id, record.video_id, f"{record.clip_id}.mp4"
         )
-        self.tmp_frame_path = os.path.join(CONFIG["paths"]["tmp_frames"], dataset_id)
+        self.tmp_frame_path = os.path.join(CONFIG["paths"]["tmp_frame"], dataset_id)
         self.tmp_audio_path = os.path.join(CONFIG["paths"]["tmp_audio"], f"{dataset_id}.wav")
         self.image_0_path = os.path.join(CONFIG["paths"]["image"], f"{dataset_id}_0.jpg")
         self.image_1_path = os.path.join(CONFIG["paths"]["image"], f"{dataset_id}_1.jpg")

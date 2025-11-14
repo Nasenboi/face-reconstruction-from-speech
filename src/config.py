@@ -32,3 +32,7 @@ prop_ams: List[AM] = [AM(type="proportion", lm_indicies=am) for am in AM_MAP["pr
 AMS: List[AM] = dist_ams + angle_ams + prop_ams
 
 AM_COLUMN_NAMES: List[str] = [am.get_column_name() for am in AMS]
+
+
+# Create paths if they dont exist
+[os.makedirs(p, exist_ok=True) for p in [VIDEO_PATH, TMP_AUDIO_PATH, TMP_FRAME_PATH, IMAGE_PATH]]

@@ -14,7 +14,7 @@
         "epoch": 20
     },
     "dataset": {
-        "name": "train_001_250037.csv",
+        "name": "train_001_250037.feather",
         "feature_set": "eGeMAPSv02",
         "feature_level": "Functionals"
     }
