@@ -2,6 +2,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 from typing import Optional, Union
 
 import opensmile
@@ -40,7 +41,8 @@ class DataPreparation:
                 record = DataSetRecord(**record_dict)
                 return AudioFeatureExtractor(record, index).get_audio_features()
             except TimeoutException:
-                print(f"Timeout processing record for {index} {record.clip_id}!")
+                worker_id = threading.current_thread().name
+                print(f"Timeout processing record for {index} {record.clip_id} on worker {worker_id}!")
                 return None
             except Exception as e:
                 print(f"Error calculating audio features for {index} {record.clip_id}:\n{e}")
@@ -92,6 +94,9 @@ class AudioFeatureExtractor:
         return df
 
     def _extract_audio_from_video(self):
+        if not os.path.exists(self.paths.video_path):
+            raise FileNotFoundError
+
         result = subprocess.run(
             [
                 "ffmpeg",
@@ -107,3 +112,5 @@ class AudioFeatureExtractor:
             capture_output=True,
             text=True,
         )
+        if not os.path.exists(self.paths.video_path):
+            raise FileNotFoundError
