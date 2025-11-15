@@ -47,7 +47,7 @@ RUN arch=$(uname -m) && \
 
 ENV PATH="/root/miniconda3/bin:$PATH"
 RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
- && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && conda init
+    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && conda init
 
 RUN git clone https://github.com/sicxu/Deep3DFaceRecon_pytorch.git
 RUN cd Deep3DFaceRecon_pytorch && \ 
@@ -61,6 +61,8 @@ COPY environment.yml .
 RUN conda env create -f environment.yml
 
 RUN /root/miniconda3/envs/deep3d_pytorch/bin/python -m pip install /app/Deep3DFaceRecon_pytorch/nvdiffrast Ninja
+
+COPY main.py /app/Deep3DFaceRecon_pytorch
 
 COPY docker-entrypoint.sh .
 ENTRYPOINT [ "/bin/bash", "docker-entrypoint.sh" ]

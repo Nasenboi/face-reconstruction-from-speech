@@ -18,18 +18,23 @@ if [ ! -f "$config" ]; then
 fi
 
 image_folder=$(jq -r '.paths.image' "$config")
+mesh_folder=$(jq -r '.paths.mesh' "$config")
 bfm_folder=$(jq -r '.paths.bfm' "$config")
 checkpoint_folder=$(jq -r '.paths.checkpoints' "$config")
 model_name=$(jq -r '.face_geometry.model' "$config")
 epoch=$(jq -r '.face_geometry.epoch' "$config")
+api_port=$(jq -r '.face_geometry.api_port' "$config")
 
 docker build -t geometry_estimator:latest $script_dir && \
 docker run --rm -it \
 -v "$image_folder":/app/input \
+-v "$mesh_folder":/app/mesh \
 -v "$bfm_folder":/app/Deep3DFaceRecon_pytorch/BFM \
 -v "$checkpoint_folder":/app/Deep3DFaceRecon_pytorch/checkpoints \
 --gpus all \
+-p 8000:8000 \
 geometry_estimator:latest \
 -i /app/input/ \
+-o /app/mesh/ \
 -m "$model_name" \
 -e "$epoch"
