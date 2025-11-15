@@ -74,12 +74,14 @@ dependencies:
   - pip:
       - absl-py==0.15.0
       - anyio==3.6.2
+      - asgiref==3.4.1
       - astor==0.8.1
       - astunparse==1.6.3
       - cached-property==1.5.2
       - cachetools==4.2.4
       - charset-normalizer==2.0.12
       - clang==5.0
+      - click==8.0.4
       - contextlib2==21.6.0
       - contextvars==2.4
       - cycler==0.11.0
@@ -92,6 +94,7 @@ dependencies:
       - google-auth-oauthlib==0.4.6
       - google-pasta==0.2.0
       - grpcio==1.48.2
+      - h11==0.13.0
       - h5py==3.1.0
       - idna==3.10
       - imageio==2.15.0
@@ -139,6 +142,7 @@ dependencies:
       - tifffile==2020.9.3
       - trimesh==3.23.5
       - urllib3==1.26.20
+      - uvicorn==0.16.0
       - werkzeug==2.0.3
       - wrapt==1.12.1
       - zipp==3.6.0
