@@ -22,25 +22,20 @@ from src.paths import PathBuilder
 class AMCalculator:
     def __init__(self, dataset_path: str):
         self.dataset_path = dataset_path
-        self.df = pd.read_csv(dataset_path, dtype={"clip_id": str})
+        self.df = pd.read_feather(dataset_path)
+        self.landmarks = self.df[[c for c in self.df.columns if "landmark" in c]].to_numpy().reshape(-1, 68, 3)
 
-    def calculate_ams(
-        self, delete_interm_files: bool = False, new_path: Optional[str] = None, n_jobs: int = 5, drop_na: bool = False
-    ):
-        def process_single_record(record_tuple):
-            index, record_dict, delete = record_tuple
+    def calculate_ams(self, new_path: Optional[str] = None, n_jobs: int = 5, drop_na: bool = False):
+        def process_single_record(index):
             try:
-                record_obj = DataSetRecord(**record_dict)
-                return RecordAMCalculator(record=record_obj, index=index, delete=delete).calculate_ams()
+                landmarks = self.landmarks[index]
+                return RecordAMCalculator(index=index, landmarks=landmarks).calculate_ams()
             except Exception as e:
                 print(f"Error calculating AMs for {index}:\n{e}")
                 return None
 
-        records_to_process = [(index, record.to_dict(), delete_interm_files) for index, record in self.df.iterrows()]
-
         all_ams = Parallel(n_jobs=n_jobs)(
-            delayed(process_single_record)(record_data)
-            for record_data in tqdm(records_to_process, desc="Calculating AMs")
+            delayed(process_single_record)(index) for index in tqdm(range(len(self.landmarks)), desc="Calculating AMs")
         )
         if drop_na:
             all_ams = [calculator for calculator in all_ams if calculator is not None]
@@ -49,84 +44,33 @@ class AMCalculator:
         self.df = self.df.merge(am_df, left_index=True, right_index=True, how="left")
 
         output_path = new_path if new_path is not None else self.dataset_path
-        self.df.to_csv(output_path, index=False)
+        self.df.to_feather(output_path, compression="zstd", compression_level=3)
 
 
 class RecordAMCalculator:
-    def __init__(self, record: DataSetRecord, index: Union[str, int], delete: bool = True):
-        self.record = record
+    def __init__(self, index: Union[int, str], landmarks: np.array):
+        self.landmarks = landmarks
         self.index = index
-        self.delete = delete
-
-        bfm_model_front = scipy.io.loadmat(os.path.join(BFM_PATH, "BFM_model_front.mat"))
-        self.landmark_indicies: list = bfm_model_front["keypoints"].flatten() - 1
-
-        self.paths = PathBuilder(self.record)
-        self.landmarks = [
-            self._get_landmarks(self.paths.result_0_mesh),
-            self._get_landmarks(self.paths.result_1_mesh),
-            self._get_landmarks(self.paths.result_2_mesh),
-        ]
 
     def calculate_ams(self) -> pd.DataFrame:
         ams = {}
 
         for am in AMS:
-            ams[am.get_column_name()] = [self._calc_avg_am(am)]
+            ams[am.get_column_name()] = [self._calc_am(am)]
 
         df = pd.DataFrame(ams)
         df = df.reset_index(drop=True)
         df.index = [self.index]
 
-        if self.delete:
-            self._delete_interm_files()
-
         return df
 
-    def _delete_interm_files(self):
-        folders_to_delete = [self.paths.frame_images_path]
-        files_to_delete = [
-            self.paths.image_0_path,
-            self.paths.image_1_path,
-            self.paths.image_2_path,
-            self.paths.image_detection_0_path,
-            self.paths.image_detection_1_path,
-            self.paths.image_detection_2_path,
-            self.paths.result_0_coefficients,
-            self.paths.result_0_image,
-            self.paths.result_0_mesh,
-            self.paths.result_1_coefficients,
-            self.paths.result_1_image,
-            self.paths.result_1_mesh,
-            self.paths.result_2_coefficients,
-            self.paths.result_2_image,
-            self.paths.result_2_mesh,
-        ]
-
-        for folder in folders_to_delete:
-            if os.path.exists(folder):
-                shutil.rmtree(folder)
-
-        for file in files_to_delete:
-            if os.path.exists(file):
-                os.remove(file)
-
-    def _get_landmarks(self, mesh_path: str) -> np.array:
-        mesh: trimesh.Geometry = trimesh.load(mesh_path)
-        vertices_3d = mesh.vertices
-
-        return np.array([np.array(v) for v in vertices_3d[self.landmark_indicies.astype(int)]])
-
-    def _calc_avg_am(self, am: AM):
-        return np.average([self._calc_am(lm, am) for lm in self.landmarks])
-
-    def _calc_am(self, landmarks: np.array, am: AM) -> float:
+    def _calc_am(self, am: AM) -> float:
         if am.type == "distance":
-            return self._get_distance(landmarks[am.lm_indicies])
+            return self._get_distance(self.landmarks[am.lm_indicies])
         elif am.type == "angle":
-            return self._get_angle(landmarks[am.lm_indicies])
+            return self._get_angle(self.landmarks[am.lm_indicies])
         else:
-            return self._get_proportion(landmarks[am.lm_indicies])
+            return self._get_proportion(self.landmarks[am.lm_indicies])
 
     def _get_distance(self, lms: np.ndarray) -> float:
         return euclidean(lms[0], lms[1])
