@@ -77,6 +77,7 @@ dependencies:
       - nvidia-nvjitlink-cu12==12.8.93
       - nvidia-nvshmem-cu12==3.3.20
       - nvidia-nvtx-cu12==12.8.90
+      - opencv-python==4.12.0.88
       - opt-einsum==3.4.0
       - optree==0.17.0
       - packaging==25.0
