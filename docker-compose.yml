@@ -1,0 +1,45 @@
+services:
+  step-02:
+    build:
+      context: 02_face_landmark_detection
+      dockerfile: Dockerfile
+    image: landmark_detector:latest
+    container_name: step-02
+    restart: "no"
+    volumes:
+      - "${VIDEO_FOLDER}:/app/video"
+      - "${IMAGE_FOLDER}:/app/image"
+      - "${DATASETS_PATH}:/app/datasets"
+    command: [ "--video_folder", "/app/video", "--img_folder", "/app/image", "--dataset_path", "/app/datasets/${DATASET_NAME}", "--buffer_size", "${BUFFER_SIZE}", "--step_size", "${STEP_SIZE}", "--port", "${API_PORT}", "--host", "step-03", "--timeout", "${TIMEOUT}" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    depends_on:
+      - step-03
+
+  step-03:
+    build:
+      context: 03_face_geometry_estimation
+      dockerfile: Dockerfile
+    image: geometry_estimator:latest
+    container_name: step-03
+    restart: "no"
+    ports:
+      - "${API_PORT}:8000"
+    volumes:
+      - "${IMAGE_FOLDER}:/app/image"
+      - "${MESH_FOLDER}:/app/mesh"
+      - "${BFM_FOLDER}:/app/Deep3DFaceRecon_pytorch/BFM"
+      - "${CHECKPOINT_FOLDER}:/app/Deep3DFaceRecon_pytorch/checkpoints"
+    command: [ "-i", "/app/image", "-o", "/app/mesh", "-m", "${MODEL_NAME}", "-e", "${EPOCH}" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]

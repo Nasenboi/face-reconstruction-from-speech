@@ -24,7 +24,7 @@ RUN arch=$(uname -m) && \
 
 ENV PATH="/root/miniconda3/bin:$PATH"
 RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
- && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && conda init
+    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && conda init
 
 COPY environment.yml .
 

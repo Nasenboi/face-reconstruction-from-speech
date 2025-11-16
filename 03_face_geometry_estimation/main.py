@@ -1,7 +1,9 @@
 import os
 
 import numpy as np
+import scipy
 import torch
+import trimesh
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from options.base_options import BaseOptions
@@ -13,6 +15,10 @@ from util.preprocess import align_img
 from models import create_model
 
 app = FastAPI(title="Deep3DFaceRecon API", description="Generate 3D face meshes from images")
+BFM_PATH = "/app/Deep3DFaceRecon_pytorch/BFM"
+bfm_model_front = scipy.io.loadmat(os.path.join(BFM_PATH, "BFM_model_front.mat"))
+
+LANDMARK_INDICIES = bfm_model_front["keypoints"].flatten() - 1
 
 
 class APIOptions(BaseOptions):
@@ -75,9 +81,16 @@ def find_landmark_path(img_path):
     """Find corresponding landmark file for an image"""
     global opt
     img_name = os.path.basename(img_path)
-    landmark_name = img_name.replace(".png", ".txt").replace(".jpg", ".txt")
+    landmark_name = img_name.replace(".jpg", ".txt")
     landmark_path = os.path.join(opt.img_folder, "detections", landmark_name)
     return landmark_path
+
+
+def get_landmarks(mesh_path: str) -> np.array:
+    mesh: trimesh.Geometry = trimesh.load(mesh_path)
+    vertices_3d = mesh.vertices
+
+    return np.array([np.array(v) for v in vertices_3d[LANDMARK_INDICIES.astype(int)]])
 
 
 @app.on_event("startup")
@@ -86,10 +99,10 @@ async def startup_event():
     initialize_model()
 
 
-@app.post("/generate-mesh")
+@app.post("/get-landmarks")
 async def generate_mesh(filename: str):
     """
-    Generate 3D mesh from an image
+    Calculate 3D Landmarks from an image
 
     Args:
         filename: Name of the image file (e.g., "face.jpg")
@@ -128,14 +141,16 @@ async def generate_mesh(filename: str):
 
         model.save_mesh(mesh_path)
 
-        return {
-            "status": "success",
-            "message": "Mesh generated successfully",
-            "mesh_file": mesh_path,
-            "input_image": filename,
-        }
+        landmarks = get_landmarks(mesh_path)
+
+        if os.path.exists(mesh_path):
+            os.remove(mesh_path)
+
+        return {"landmarks": landmarks.tolist()}
 
     except Exception as e:
+        if os.path.exists(mesh_path):
+            os.remove(mesh_path)
         raise HTTPException(status_code=500, detail=f"Error generating mesh: {str(e)}")
 
 

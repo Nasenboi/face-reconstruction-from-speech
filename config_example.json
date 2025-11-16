@@ -4,7 +4,6 @@
         "video": "video",
         "tmp_audio": "tmp/audio",
         "image": "image",
-        "tmp_frame": "tmp/frame",
         "mesh": "mesh",
         "bfm": "face_geometry/BFM",
         "checkpoints": "face_geometry/checkpoints"
@@ -12,7 +11,10 @@
     "face_geometry": {
         "model": "Deep3DFace_PyTorch_20230425",
         "epoch": 20,
-        "api_port": 8000
+        "api_port": 8000,
+        "frame_step_size": 5,
+        "frame_buffer_size": 5,
+        "timeout": 900
     },
     "dataset": {
         "name": "train_001_250037.feather",

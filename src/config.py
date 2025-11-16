@@ -15,7 +15,6 @@ CONFIG: dict = json.load(open(config_path))
 DATASET_PATH: str = os.path.join(CONFIG["paths"]["datasets"], CONFIG["dataset"]["name"])
 VIDEO_PATH: str = CONFIG["paths"]["video"]
 TMP_AUDIO_PATH: str = CONFIG["paths"]["tmp_audio"]
-TMP_FRAME_PATH: str = CONFIG["paths"]["tmp_frame"]
 IMAGE_PATH: str = CONFIG["paths"]["image"]
 BFM_PATH: str = os.path.join(CONFIG["paths"]["bfm"])
 
@@ -35,4 +34,4 @@ AM_COLUMN_NAMES: List[str] = [am.get_column_name() for am in AMS]
 
 
 # Create paths if they dont exist
-[os.makedirs(p, exist_ok=True) for p in [VIDEO_PATH, TMP_AUDIO_PATH, TMP_FRAME_PATH, IMAGE_PATH]]
+[os.makedirs(p, exist_ok=True) for p in [VIDEO_PATH, TMP_AUDIO_PATH, IMAGE_PATH]]
