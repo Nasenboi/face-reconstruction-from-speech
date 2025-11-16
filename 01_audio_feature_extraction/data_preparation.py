@@ -85,13 +85,18 @@ class AudioFeatureExtractor:
     def get_audio_features(
         self,
     ) -> pd.DataFrame:
-        self._extract_audio_from_video()
-        # remove old_indexes: ["file", "start", "end"]
-        df = self.smile.process_file(self.paths.tmp_audio_path)
-        df = df.reset_index(drop=True)
-        df.index = [self.index]
-        os.remove(self.paths.tmp_audio_path)
-        return df
+        try:
+            self._extract_audio_from_video()
+            # remove old_indexes: ["file", "start", "end"]
+            df = self.smile.process_file(self.paths.tmp_audio_path)
+            df = df.reset_index(drop=True)
+            df.index = [self.index]
+            os.remove(self.paths.tmp_audio_path)
+            return df
+        except Exception as e:
+            if os.path.exists(self.paths.tmp_audio_path):
+                os.remove(self.paths.tmp_audio_path)
+            raise e
 
     def _extract_audio_from_video(self):
         if not os.path.exists(self.paths.video_path):
