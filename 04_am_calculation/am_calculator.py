@@ -23,6 +23,7 @@ class AMCalculator:
     def __init__(self, dataset_path: str):
         self.dataset_path = dataset_path
         self.df = pd.read_feather(dataset_path)
+        self.df = self.df.reset_index()
         self.landmarks = self.df[[c for c in self.df.columns if "landmark" in c]].to_numpy().reshape(-1, 68, 3)
 
     def calculate_ams(self, new_path: Optional[str] = None, n_jobs: int = 5, drop_na: bool = False):

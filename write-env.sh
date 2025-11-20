@@ -16,10 +16,6 @@ if [ ! -f "$config" ]; then
   exit 1
 fi
 
-if [-f ".env" ]; then
-  rm .env
-fi
-
 touch .env
 
 # Create or overwrite .env file
