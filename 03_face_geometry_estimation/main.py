@@ -85,24 +85,16 @@ def find_landmark_path(img_path):
     landmark_path = os.path.join(opt.img_folder, "detections", landmark_name)
     return landmark_path
 
-
-def get_landmarks(mesh_path: str) -> np.array:
-    mesh: trimesh.Geometry = trimesh.load(mesh_path)
-    vertices_3d = mesh.vertices
-
-    return np.array([np.array(v) for v in vertices_3d[LANDMARK_INDICIES.astype(int)]])
-
-
 @app.on_event("startup")
 async def startup_event():
     """Initialize model when the application starts"""
     initialize_model()
 
 
-@app.post("/get-landmarks")
-async def generate_mesh(filename: str):
+@app.post("/get-ids")
+async def get_id(filename: str):
     """
-    Calculate 3D Landmarks from an image
+    Calculate Facial Identity informations from an image
 
     Args:
         filename: Name of the image file (e.g., "face.jpg")
@@ -120,9 +112,6 @@ async def generate_mesh(filename: str):
         if not os.path.exists(landmark_path):
             raise HTTPException(status_code=404, detail=f"Landmark file not found: {landmark_path}")
 
-        # Generate base name for output files
-        base_name = os.path.splitext(filename)[0]
-
         # Create mesh folder if it doesn't exist
         os.makedirs(opt.mesh_folder, exist_ok=True)
 
@@ -136,22 +125,13 @@ async def generate_mesh(filename: str):
         model.set_input(data)
         model.test()
 
-        # Save results
-        mesh_path = os.path.join(opt.mesh_folder, f"{base_name}.obj")
+        # retrieve results
+        id_coeffs = model.pred_coeffs_dict['id'].cpu().numpy()[0].tolist()
 
-        model.save_mesh(mesh_path)
-
-        landmarks = get_landmarks(mesh_path)
-
-        if os.path.exists(mesh_path):
-            os.remove(mesh_path)
-
-        return {"landmarks": landmarks.tolist()}
+        return id_coeffs
 
     except Exception as e:
-        if os.path.exists(mesh_path):
-            os.remove(mesh_path)
-        raise HTTPException(status_code=500, detail=f"Error generating mesh: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating id: {str(e)}")
 
 
 print("Running API")

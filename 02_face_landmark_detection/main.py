@@ -34,7 +34,7 @@ BUFFER_SIZE = int(args.buffer_size)
 STEP_SIZE = int(args.step_size)
 port = args.port
 host = args.host
-URL = f"http://{host}:{port}/get-landmarks"
+URL = f"http://{host}:{port}/get-ids"
 TIMEOUT = int(args.timeout)
 
 # ToDo: Add as config vars
@@ -136,13 +136,11 @@ def write_txt_file(frame: dict):
 
 def send_request(filename: str) -> np.array:
     response = requests.post(URL, params={"filename": filename})
-    data = response.json()
+    ids = response.json()
     if response.status_code != 200:
         print(f"Error sending request:\n{data}")
         response.raise_for_status()
-
-    landmarks_list = data["landmarks"]
-    return np.array(landmarks_list)
+    return np.array(ids)
 
 
 def remove_files(dataset_id: str):
@@ -152,12 +150,11 @@ def remove_files(dataset_id: str):
     [os.remove(os.path.join(TXT_FOLDER, t)) for t in txt_files if dataset_id in t]
 
 
-def create_landmark_dict(landmarks: np.array):
-    lm_dict = {}
-    for i, lm in enumerate(landmarks):
-        for j, p in enumerate(lm):
-            lm_dict[f"landmark_{i:02d}_{j}"] = p
-    return lm_dict
+def create_id_dict(ids: np.array):
+    id_dict = {}
+    for index, id in enumerate(ids):
+        id_dict[f"id_{index:02d}"] = id
+    return id_dict
 
 
 def process_video(index, record: DataSetRecord) -> pd.DataFrame:
@@ -178,14 +175,14 @@ def process_video(index, record: DataSetRecord) -> pd.DataFrame:
 
         top_3_frames = sorted(frames, key=lambda x: x["forwardness"])[:3]
 
-        landmarks = []
+        ids_array = []
         for f in top_3_frames:
             write_txt_file(f)
-            landmarks.append(send_request(os.path.basename(f["frame_path"])))
-        landmarks = np.array(landmarks)
-        avg_landmarks = np.mean(landmarks, axis=0)
-        landmark_dict = create_landmark_dict(avg_landmarks)
-        df = pd.DataFrame({**landmark_dict}, index=[index])
+            ids_array.append(send_request(os.path.basename(f["frame_path"])))
+        ids_array = np.array(ids_array)
+        avg_ids = np.mean(ids_array, axis=0)
+        id_dict = create_id_dict(avg_ids)
+        df = pd.DataFrame({**id_dict}, index=[index])
     except Exception as e:
         print(f"Could not process video {paths.video_path}:\n{e}")
     remove_files(dataset_id)
@@ -193,7 +190,7 @@ def process_video(index, record: DataSetRecord) -> pd.DataFrame:
 
 
 def iterate_df(df: pd.DataFrame, timeout=900, new_path: Optional[str] = None):
-    def get_facial_landmarks(
+    def get_facial_ids(
         record_tuple,
     ):
         try:
@@ -211,18 +208,18 @@ def iterate_df(df: pd.DataFrame, timeout=900, new_path: Optional[str] = None):
 
     records_to_process = [(index, record.to_dict()) for index, record in df.iterrows()]
 
-    all_landmarks = [
-        get_facial_landmarks(record_data)
-        for record_data in tqdm(records_to_process, desc="Calculating Facial Landmarks")
+    all_ids = [
+        get_facial_ids(record_data)
+        for record_data in tqdm(records_to_process, desc="Calculating Facial IDs")
     ]
 
     if DROP_NA:
         print("Dropping Na:")
-        all_landmarks = [f for f in all_landmarks if f is not None]
+        all_ids = [f for f in all_ids if f is not None]
 
     print("Concatinating Dicts")
-    audio_feature_df = pd.concat(all_landmarks, axis=0)
-    df = df.merge(audio_feature_df, left_index=True, right_index=True, how="left")
+    id_feature_df = pd.concat(all_ids, axis=0)
+    df = df.merge(id_feature_df, left_index=True, right_index=True, how="left")
 
     print("Resetting Index")
     df = df.reset_index(drop=True)
@@ -235,5 +232,5 @@ def iterate_df(df: pd.DataFrame, timeout=900, new_path: Optional[str] = None):
 data = pd.read_feather(DATASET_PATH)
 if DROP_NA:
     data = data.dropna()
-new_path = DATASET_PATH.replace(".feather", "_lms.feather")
+new_path = DATASET_PATH.replace(".feather", "_ids.feather")
 iterate_df(data, timeout=TIMEOUT, new_path=new_path)
