@@ -112,7 +112,7 @@ async def get_id(filename: str):
         if not os.path.exists(landmark_path):
             raise HTTPException(status_code=404, detail=f"Landmark file not found: {landmark_path}")
 
-        # Create mesh folder if it doesn't exist
+        # Create mesh folder if it doesn"t exist
         os.makedirs(opt.mesh_folder, exist_ok=True)
 
         # Read and preprocess data
@@ -126,7 +126,7 @@ async def get_id(filename: str):
         model.test()
 
         # retrieve results
-        id_coeffs = model.pred_coeffs_dict['id'].cpu().numpy()[0].tolist()
+        id_coeffs = model.pred_coeffs_dict["id"].cpu().numpy()[0].tolist()
 
         return id_coeffs
 

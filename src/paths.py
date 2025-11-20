@@ -20,7 +20,7 @@ class PathBuilder:
             CONFIG["paths"]["checkpoints"],
             CONFIG["face_geometry"]["model"],
             "results",
-            f"epoch_{CONFIG['face_geometry']['epoch']}_000000",
+            f"epoch_{CONFIG["face_geometry"]["epoch"]}_000000",
         )
 
         dataset_id = f"{record.speaker_id}_{record.video_id}_{record.clip_id}"

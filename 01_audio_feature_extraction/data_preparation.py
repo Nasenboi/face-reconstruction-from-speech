@@ -5,6 +5,8 @@ import sys
 import threading
 from typing import Optional, Union
 
+import librosa
+import numpy as np
 import opensmile
 import pandas as pd
 from joblib import Parallel, delayed
@@ -78,7 +80,15 @@ class AudioFeatureExtractor:
         index: Union[str, int],
     ):
         self.record = record
-        self.smile = opensmile.Smile(feature_set=FEATURE_SET, feature_level=FEATURE_LEVEL)
+        if FEATURE_SET != "mel":
+            self.smile = opensmile.Smile(feature_set=FEATURE_SET, feature_level=FEATURE_LEVEL)
+        else:
+            self.feature_names = [[
+                f"mel_{i:03d}_{j:03d}"
+                for j in range(128)
+                for i in range(128)
+            ]]
+        
         self.paths = PathBuilder(record)
         self.index = index
 
@@ -87,9 +97,13 @@ class AudioFeatureExtractor:
     ) -> pd.DataFrame:
         try:
             self._extract_audio_from_video()
-            # remove old_indexes: ["file", "start", "end"]
-            df = self.smile.process_file(self.paths.tmp_audio_path)
-            df = df.reset_index(drop=True)
+
+            if FEATURE_SET != "mel":
+                df = self.smile.process_file(self.paths.tmp_audio_path)
+                df = df.reset_index(drop=True)
+            else:
+                df = self._process_file()
+                
             df.index = [self.index]
             os.remove(self.paths.tmp_audio_path)
             return df
@@ -97,6 +111,32 @@ class AudioFeatureExtractor:
             if os.path.exists(self.paths.tmp_audio_path):
                 os.remove(self.paths.tmp_audio_path)
             raise e
+        
+    def _process_file(self) -> pd.DataFrame:
+        y, sr = librosa.load(self.paths.tmp_audio_path, mono=True)
+        y, _ = librosa.effects.trim(y)  # Fixed: added "y" parameter
+        
+        S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=N_MELS, fmax=F_MAX)
+        
+        if S.shape[1] > 128:
+            S_trimmed = S[:, :128]
+        elif S.shape[1] < 128:
+            padding = 128 - S.shape[1]
+            S_trimmed = np.pad(S, ((0, 0), (0, padding)), mode="constant")
+        else:
+            S_trimmed = S
+        if S_trimmed.shape[0] != 128:
+            if S_trimmed.shape[0] > 128:
+                S_trimmed = S_trimmed[:128, :]
+            else:
+                padding = 128 - S_trimmed.shape[0]
+                S_trimmed = np.pad(S_trimmed, ((0, padding), (0, 0)), mode="constant")
+        
+        flattened_features = S_trimmed.flatten()
+
+        df = pd.DataFrame([flattened_features], columns=self.feature_names[0])
+        
+        return df
 
     def _extract_audio_from_video(self):
         if not os.path.exists(self.paths.video_path):

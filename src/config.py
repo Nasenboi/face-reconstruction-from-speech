@@ -18,8 +18,13 @@ TMP_AUDIO_PATH: str = CONFIG["paths"]["tmp_audio"]
 IMAGE_PATH: str = CONFIG["paths"]["image"]
 BFM_PATH: str = os.path.join(CONFIG["paths"]["bfm"])
 
-FEATURE_SET: FeatureSet = feature_set_map[CONFIG["dataset"]["feature_set"]]
-FEATURE_LEVEL: FeatureLevel = feature_level_map[CONFIG["dataset"]["feature_level"]]
+FEATURE_SET = CONFIG["dataset"]["feature_set"]
+if FEATURE_SET != "mel":
+    FEATURE_SET: FeatureSet = feature_set_map[CONFIG["dataset"]["feature_set"]]
+    FEATURE_LEVEL: FeatureLevel = feature_level_map[CONFIG["dataset"]["feature_level"]]
+else:
+    F_MAX: int = int(CONFIG["dataset"]["f_max"])
+    N_MELS: int = int(CONFIG["dataset"]["n_mels"])
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 lm_map_path = os.path.join(parent_dir, "am_map.json")
