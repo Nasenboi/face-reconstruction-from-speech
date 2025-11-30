@@ -1,0 +1,21 @@
+services:
+  cnn-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cnn-training:latest
+    container_name: cnn-training
+    restart: "no"
+    volumes:
+      - "${PROJECT_FOLDER}:/app/project"
+      - "./notebooks:/app/notebooks"
+    ports:
+      - "8888:8888"
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]

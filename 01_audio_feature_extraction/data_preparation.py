@@ -1,21 +1,31 @@
 import os
+import sys
+
+sys.path.append("..")
 import signal
 import subprocess
-import sys
 import threading
 from typing import Optional, Union
 
+import audeer
+import audonnx
 import librosa
 import numpy as np
 import opensmile
 import pandas as pd
+import torch
 from joblib import Parallel, delayed
+from speechbrain.inference.speaker import EncoderClassifier
 from tqdm import tqdm
+from voice_height_regressor import HeightRegressionPipeline
 
-sys.path.append("..")
 from src.config import *
 from src.models import DataSetRecord
 from src.paths import PathBuilder
+
+# Preset Variables if needed:
+RANDOM_STATE = 1
+np.random.seed(RANDOM_STATE)
 
 
 class TimeoutException(Exception):
@@ -26,6 +36,24 @@ def timeout_handler(signum, frame):
     raise TimeoutException()
 
 
+# Preload the model
+if FEATURE_SET == "covariants":
+    # https://huggingface.co/audeering/wav2vec2-large-robust-24-ft-age-gender
+    AUDEERING_MODEL = audonnx.load(AUDEER_MODEL_ROOT)
+
+    # https://github.com/griko/voice-height-regression
+    HEIGHT_MODEL = HeightRegressionPipeline.from_pretrained(
+        "griko/height_reg_svr_ecapa_voxceleb",
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    )
+elif FEATURE_SET == "embeddings":
+    EMBEDDING_MODEL = EncoderClassifier.from_hparams(source="speechbrain/spkrec-ecapa-voxceleb", run_opts={"device":"cuda"})
+
+    def load_audio_librosa(path, device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), sr=16000):
+        y, sr = librosa.load(path, sr=sr, mono=True)
+        signal = torch.from_numpy(y).float().unsqueeze(0).to(device)
+        return signal, sr
+
 class DataPreparation:
     def __init__(self):
         self.df = pd.read_feather(DATASET_PATH)
@@ -33,6 +61,9 @@ class DataPreparation:
     def calculate_audio_features(
         self, n_jobs: int = 10, drop_na: bool = True, new_path: Optional[str] = None, timeout: int = 60
     ):
+        if FEATURE_SET in ["covariants", "embeddings"]:
+            n_jobs = 1
+
         def get_audio_features(
             record_tuple,
         ):
@@ -73,6 +104,7 @@ class DataPreparation:
         self.df.to_feather(output_path, compression="zstd", compression_level=3)
 
 
+
 class AudioFeatureExtractor:
     def __init__(
         self,
@@ -80,17 +112,23 @@ class AudioFeatureExtractor:
         index: Union[str, int],
     ):
         self.record = record
-        if FEATURE_SET != "mel":
+        if FEATURE_SET in feature_set_map.keys():
             self.smile = opensmile.Smile(feature_set=FEATURE_SET, feature_level=FEATURE_LEVEL)
-        else:
-            self.feature_names = [[
+        elif FEATURE_SET == "mel":
+            self.feature_names = [
                 f"mel_{i:03d}_{j:03d}"
                 for j in range(128)
                 for i in range(128)
-            ]]
+            ]
+        elif FEATURE_SET == "embeddings":
+            self.feature_names = [
+                f"emb_{i:03d}"
+                for i in range(192)
+            ]
         
         self.paths = PathBuilder(record)
         self.index = index
+
 
     def get_audio_features(
         self,
@@ -98,23 +136,58 @@ class AudioFeatureExtractor:
         try:
             self._extract_audio_from_video()
 
-            if FEATURE_SET != "mel":
-                df = self.smile.process_file(self.paths.tmp_audio_path)
+            if FEATURE_SET in feature_set_map.keys():
+                df = self.smile.process_file(self.paths.audio_path)
                 df = df.reset_index(drop=True)
+            elif FEATURE_SET == "covariants":
+                df = self._get_audeer()
+            elif FEATURE_SET == "mel":
+                df = self._get_mel()
+            elif FEATURE_SET == "embeddings":
+                df = self._get_embeddings()
             else:
-                df = self._process_file()
+                df = pd.DataFrame([])
                 
             df.index = [self.index]
-            os.remove(self.paths.tmp_audio_path)
+            os.remove(self.paths.audio_path)
             return df
         except Exception as e:
-            if os.path.exists(self.paths.tmp_audio_path):
-                os.remove(self.paths.tmp_audio_path)
+            if os.path.exists(self.paths.audio_path):
+                os.remove(self.paths.audio_path)
             raise e
         
-    def _process_file(self) -> pd.DataFrame:
-        y, sr = librosa.load(self.paths.tmp_audio_path, mono=True)
-        y, _ = librosa.effects.trim(y)  # Fixed: added "y" parameter
+    def _get_embeddings(self) -> pd.DataFrame:
+        y, fs = load_audio_librosa(self.paths.audio_path)
+        embeddings = EMBEDDING_MODEL.encode_batch(y).cpu().numpy()[0][0].reshape(1, -1)
+
+        return pd.DataFrame(
+            embeddings,
+            columns=self.feature_names
+        )
+        
+
+    def _get_audeer(self) -> pd.DataFrame:
+        y, sr = librosa.load(self.paths.audio_path, mono=True)
+        y, _ = librosa.effects.trim(y)
+
+        audeering_model_output: dict = AUDEERING_MODEL(y, sr)
+        height_model_output: dict = HEIGHT_MODEL(self.paths.audio_path)[0]
+
+        return pd.DataFrame([
+            {
+                "esitmated_age": audeering_model_output["logits_age"][0],
+                "estimated_gender_m": audeering_model_output["logits_gender"][0][0],
+                "estimated_gender_f": audeering_model_output["logits_gender"][0][1],
+                "estimated_gender_c": audeering_model_output["logits_gender"][0][2],
+                "estimated_height": height_model_output
+            }
+        ])
+
+
+
+    def _get_mel(self) -> pd.DataFrame:
+        y, sr = librosa.load(self.paths.audio_path, mono=True)
+        y, _ = librosa.effects.trim(y)
         
         S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=N_MELS, fmax=F_MAX)
         
@@ -134,7 +207,7 @@ class AudioFeatureExtractor:
         
         flattened_features = S_trimmed.flatten()
 
-        df = pd.DataFrame([flattened_features], columns=self.feature_names[0])
+        df = pd.DataFrame([flattened_features], columns=self.feature_names)
         
         return df
 
@@ -151,7 +224,7 @@ class AudioFeatureExtractor:
                 "0",
                 "-map",
                 "a",
-                self.paths.tmp_audio_path,
+                self.paths.audio_path,
             ],
             check=True,
             capture_output=True,

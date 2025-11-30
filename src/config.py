@@ -14,15 +14,18 @@ CONFIG: dict = json.load(open(config_path))
 
 DATASET_PATH: str = os.path.join(CONFIG["paths"]["datasets"], CONFIG["dataset"]["name"])
 VIDEO_PATH: str = CONFIG["paths"]["video"]
-TMP_AUDIO_PATH: str = CONFIG["paths"]["tmp_audio"]
+AUDIO_PATH: str = CONFIG["paths"]["audio"]
 IMAGE_PATH: str = CONFIG["paths"]["image"]
 BFM_PATH: str = os.path.join(CONFIG["paths"]["bfm"])
+MODEL_PATH: str = os.path.join(CONFIG["paths"]["model"])
+
+AUDEER_MODEL_ROOT = os.path.join(MODEL_PATH, "audeer")
 
 FEATURE_SET = CONFIG["dataset"]["feature_set"]
-if FEATURE_SET != "mel":
-    FEATURE_SET: FeatureSet = feature_set_map[CONFIG["dataset"]["feature_set"]]
-    FEATURE_LEVEL: FeatureLevel = feature_level_map[CONFIG["dataset"]["feature_level"]]
-else:
+if FEATURE_SET in feature_set_map.keys():
+    FEATURE_SET: FeatureSet = feature_set_map[FEATURE_SET]
+    FEATURE_LEVEL: FeatureLevel = feature_level_map[CONFIG["dataset"].get("feature_level", "Functionals")]
+elif FEATURE_SET == "mel":
     F_MAX: int = int(CONFIG["dataset"]["f_max"])
     N_MELS: int = int(CONFIG["dataset"]["n_mels"])
 
@@ -37,6 +40,5 @@ AMS: List[AM] = dist_ams + angle_ams + prop_ams
 
 AM_COLUMN_NAMES: List[str] = [am.get_column_name() for am in AMS]
 
-
 # Create paths if they dont exist
-[os.makedirs(p, exist_ok=True) for p in [VIDEO_PATH, TMP_AUDIO_PATH, IMAGE_PATH]]
+[os.makedirs(p, exist_ok=True) for p in [VIDEO_PATH, AUDIO_PATH, IMAGE_PATH]]

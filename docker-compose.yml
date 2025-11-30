@@ -7,10 +7,14 @@ services:
     container_name: step-02
     restart: "no"
     volumes:
-      - "${VIDEO_FOLDER}:/app/video"
-      - "${IMAGE_FOLDER}:/app/image"
-      - "${DATASETS_PATH}:/app/datasets"
-    command: [ "--video_folder", "/app/video", "--img_folder", "/app/image", "--dataset_path", "/app/datasets/${DATASET_NAME}", "--buffer_size", "${BUFFER_SIZE}", "--step_size", "${STEP_SIZE}", "--port", "${API_PORT}", "--host", "step-03", "--timeout", "${TIMEOUT}" ]
+      #- "${VIDEO_FOLDER}:/app/video"
+      #- "${IMAGE_FOLDER}:/app/image"
+      #- "${DATASETS_PATH}:/app/datasets"
+      - "/run/media/chr1s/chr1sdrive2/acoustic-to-anthropometric:/app/project"
+      - "./99_notebooks:/app/99_notebooks"
+    #command: [ "--video_folder", "/app/video", "--img_folder", "/app/image", "--dataset_path", "/app/datasets/${DATASET_NAME}", "--buffer_size", "${BUFFER_SIZE}", "--step_size", "${STEP_SIZE}", "--port", "${API_PORT}", "--host", "step-03", "--timeout", "${TIMEOUT}" ]
+    ports:
+      - "8888:8888"
     deploy:
       resources:
         reservations:
@@ -18,8 +22,8 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
-    depends_on:
-      - step-03
+    #depends_on:
+    #  - step-03
 
   step-03:
     build:

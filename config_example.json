@@ -2,7 +2,7 @@
     "paths": {
         "datasets": "datasets",
         "video": "video",
-        "tmp_audio": "tmp/audio",
+        "audio": "audio",
         "image": "image",
         "mesh": "mesh",
         "bfm": "face_geometry/BFM",
